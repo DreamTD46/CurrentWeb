@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file://C%3A/Users/ttigg/Documents/GitHub/ufps-web/src/app/styles/sidebar.css"],"sourcesContent":["/* src/app/styles/sidebar.css */\r\n.sidebar {\r\n    width: 250px;\r\n    height: 100%;\r\n    position: fixed;\r\n    top: 0;\r\n    left: 0;\r\n    background-color: #f4f4f4;\r\n    padding: 20px;\r\n}\r\n\r\n.monitoring-header h2 {\r\n    font-size: 1.5em;\r\n}\r\n\r\n.monitoring-header p {\r\n    color: green;\r\n}"],"names":[],"mappings":"AACA;;;;;;;;;;AAUA;;;;AAIA"}},
+    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 21, "column": 0}, "map": {"version":3,"sources":["file://C%3A/Users/ttigg/Documents/GitHub/ufps-web/src/app/styles/mapsection.css"],"sourcesContent":["/* src/app/styles/mapsection.css */\r\n.map-container {\r\n    width: 100%;\r\n    height: 400px;\r\n}"],"names":[],"mappings":"AACA"}},
+    {"offset": {"line": 25, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 28, "column": 0}, "map": {"version":3,"sources":["file://C%3A/Users/ttigg/Documents/GitHub/ufps-web/src/app/styles/footer.css"],"sourcesContent":["/* src/app/styles/footer.css */\r\n.footer {\r\n    background-color: #333;\r\n    color: white;\r\n    padding: 20px;\r\n    text-align: center;\r\n}"],"names":[],"mappings":"AACA"}},
+    {"offset": {"line": 34, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 37, "column": 0}, "map": {"version":3,"sources":["file://C%3A/Users/ttigg/Documents/GitHub/ufps-web/src/app/styles/page.css"],"sourcesContent":["/* src/app/styles/page.css */\r\nbody {\r\n    font-family: Arial, sans-serif;\r\n}\r\n\r\nh1 {\r\n    color: #333;\r\n}\r\n\r\np {\r\n    color: #666;\r\n}"],"names":[],"mappings":"AACA;;;;AAIA;;;;AAIA"}},
+    {"offset": {"line": 48, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}

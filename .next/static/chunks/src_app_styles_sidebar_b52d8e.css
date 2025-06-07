@@ -1,0 +1,20 @@
+/* [project]/src/app/styles/sidebar.css [app-client] (css) */
+.sidebar {
+  width: 250px;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #f4f4f4;
+  padding: 20px;
+}
+
+.monitoring-header h2 {
+  font-size: 1.5em;
+}
+
+.monitoring-header p {
+  color: green;
+}
+
+/*# sourceMappingURL=src_app_styles_sidebar_b52d8e.css.map*/

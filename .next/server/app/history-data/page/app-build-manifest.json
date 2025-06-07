@@ -1,0 +1,24 @@
+{
+  "pages": {
+    "/history-data/page": [
+      "static/chunks/_dd0490._.css",
+      "static/chunks/_1f396c._.js",
+      "static/chunks/src_app_layout_61af54.js",
+      "static/chunks/src_cd225f._.js",
+      "static/chunks/node_modules_@firebase_database_dist_index_esm2017_5cb37f.js",
+      "static/chunks/node_modules_lodash_706a43._.js",
+      "static/chunks/node_modules_recharts_es6_f1a0d8._.js",
+      "static/chunks/node_modules_19ef02._.js",
+      "static/chunks/src_components_MapComponents_39aae4.js",
+      "static/chunks/src_app_history-data_page_c6489c.js",
+      "static/chunks/node_modules_next_dist_compiled_react-dom_1f56dc._.js",
+      "static/chunks/node_modules_next_dist_compiled_107ce8._.js",
+      "static/chunks/node_modules_next_dist_client_523921._.js",
+      "static/chunks/node_modules_next_dist_4bb10e._.js",
+      "static/chunks/node_modules_@swc_helpers_cjs_00636a._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_d0a96d._.js",
+      "static/chunks/_e69f0d._.js",
+      "static/chunks/_d95469._.js"
+    ]
+  }
+}
