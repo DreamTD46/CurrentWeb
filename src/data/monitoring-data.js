@@ -563,7 +563,7 @@ export const useLocationMonitoringData = (locationData) => {
 
     } else if (dataSource === 'raw') {
       // การจัดการ RAW data source
-      const rawFirebasePath = `${RAW_PATH}${locationData.rawDataPath}/${datePath}`;
+      const rawFirebasePath = `${TESTING_PATH}${locationData.rawDataPath}/${datePath}`;
 
       console.log('RAW path for all data:', rawFirebasePath);
 

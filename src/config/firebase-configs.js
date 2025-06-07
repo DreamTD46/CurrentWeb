@@ -46,6 +46,7 @@ export const LOCATION_CONFIGS = {
         dataSource: 'raw', // ประเภทข้อมูล
         pieraUserId: null, // ไม่ใช้ Piera
         pieraPath: null,
+        testingPath: 'Lab', // ใช้ Testing/Lab สำหรับทุกอย่าง
         rawDataPath: 'Lab' // ใช้ RAWdata/Lab สำหรับทุกอย่าง
     }
 };

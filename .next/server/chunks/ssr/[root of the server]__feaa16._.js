@@ -131,6 +131,7 @@ const LOCATION_CONFIGS = {
         dataSource: 'raw',
         pieraUserId: null,
         pieraPath: null,
+        testingPath: 'Lab',
         rawDataPath: 'Lab' // ใช้ RAWdata/Lab สำหรับทุกอย่าง
     }
 };
@@ -611,7 +612,7 @@ const useLocationMonitoringData = (locationData)=>{
             };
         } else if (dataSource === 'raw') {
             // การจัดการ RAW data source
-            const rawFirebasePath = `${RAW_PATH}${locationData.rawDataPath}/${datePath}`;
+            const rawFirebasePath = `${TESTING_PATH}${locationData.rawDataPath}/${datePath}`;
             console.log('RAW path for all data:', rawFirebasePath);
             const rawQuery = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$database$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$database$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ref"])(database, rawFirebasePath), (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$database$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["orderByKey"])(), (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$database$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["limitToLast"])(1));
             const rawUnsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$database$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["onValue"])(rawQuery, (snapshot)=>{
