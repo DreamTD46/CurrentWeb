@@ -43,9 +43,10 @@ export const LOCATION_CONFIGS = {
         coords: [8.638222, 99.897976],
         firebaseConfig: C4_FIREBASE_CONFIG,
         // C4 ใช้ RAWdata สำหรับทั้ง PM และ อุณหภูมิ/ความชื้น
-        dataSource: 'raw', // ประเภทข้อมูล
+        dataSource: 'testing', // ประเภทข้อมูล
         pieraUserId: null, // ไม่ใช้ Piera
         pieraPath: null,
+        testingPath: 'Lab', // ใช้ Testing/Lab สำหรับทุกอย่าง
         rawDataPath: 'Lab' // ใช้ RAWdata/Lab สำหรับทุกอย่าง
     }
 };

@@ -135,7 +135,137 @@ export const PM_THRESHOLDS = {
   }
 };
 
-// ฟังก์ชันสำหรับคำนวณสถานะคุณภาพอากาศ - ปรับปรุงให้แข็งแกร่งขึ้น
+// ===================================================================
+// Individual PM Status Functions - ฟังก์ชันคำนวณสถานะแต่ละค่า PM
+// ===================================================================
+
+// ฟังก์ชันสำหรับคำนวณสถานะของ PC01 เท่านั้น
+export const determinePC01Status = (pc01Value) => {
+  const pc01Val = safeParse(pc01Value);
+
+  if (pc01Val > PM_THRESHOLDS.PC01.Danger) {
+    return "Hazardous";
+  } else if (pc01Val > PM_THRESHOLDS.PC01['Affects health']) {
+    return "Danger";
+  } else if (pc01Val > PM_THRESHOLDS.PC01.Warning) {
+    return "Affects health";
+  } else if (pc01Val > PM_THRESHOLDS.PC01.Good) {
+    return "Warning";
+  } else {
+    return "Good";
+  }
+};
+
+// ฟังก์ชันสำหรับคำนวณสถานะของ PM01 เท่านั้น
+export const determinePM01Status = (pm01Value) => {
+  const pm01Val = safeParse(pm01Value);
+
+  if (pm01Val > PM_THRESHOLDS.PM01.Danger) {
+    return "Hazardous";
+  } else if (pm01Val > PM_THRESHOLDS.PM01['Affects health']) {
+    return "Danger";
+  } else if (pm01Val > PM_THRESHOLDS.PM01.Warning) {
+    return "Affects health";
+  } else if (pm01Val > PM_THRESHOLDS.PM01.Good) {
+    return "Warning";
+  } else {
+    return "Good";
+  }
+};
+
+// ฟังก์ชันสำหรับคำนวณสถานะของ PM2.5 เท่านั้น
+export const determinePM25Status = (pm25Value) => {
+  const pm25Val = safeParse(pm25Value);
+
+  console.log('=== PM2.5 STATUS CALCULATION ===');
+  console.log('PM2.5 Value:', pm25Val);
+  console.log('Thresholds:', PM_THRESHOLDS.PM);
+
+  if (pm25Val > PM_THRESHOLDS.PM.Danger) {
+    console.log('PM2.5 Status: Hazardous');
+    return "Hazardous";
+  } else if (pm25Val > PM_THRESHOLDS.PM['Affects health']) {
+    console.log('PM2.5 Status: Danger');
+    return "Danger";
+  } else if (pm25Val > PM_THRESHOLDS.PM.Warning) {
+    console.log('PM2.5 Status: Affects health');
+    return "Affects health";
+  } else if (pm25Val > PM_THRESHOLDS.PM.Good) {
+    console.log('PM2.5 Status: Warning');
+    return "Warning";
+  } else {
+    console.log('PM2.5 Status: Good');
+    return "Good";
+  }
+};
+
+// ฟังก์ชันสำหรับคำนวณสถานะของ PM10 เท่านั้น
+export const determinePM10Status = (pm10Value) => {
+  const pm10Val = safeParse(pm10Value);
+
+  console.log('=== PM10 STATUS CALCULATION ===');
+  console.log('PM10 Value:', pm10Val);
+  console.log('Thresholds:', PM_THRESHOLDS.PM);
+
+  if (pm10Val > PM_THRESHOLDS.PM.Danger) {
+    console.log('PM10 Status: Hazardous');
+    return "Hazardous";
+  } else if (pm10Val > PM_THRESHOLDS.PM['Affects health']) {
+    console.log('PM10 Status: Danger');
+    return "Danger";
+  } else if (pm10Val > PM_THRESHOLDS.PM.Warning) {
+    console.log('PM10 Status: Affects health');
+    return "Affects health";
+  } else if (pm10Val > PM_THRESHOLDS.PM.Good) {
+    console.log('PM10 Status: Warning');
+    return "Warning";
+  } else {
+    console.log('PM10 Status: Good');
+    return "Good";
+  }
+};
+
+// ฟังก์ชันสำหรับ get สถานะและสีของ PM แต่ละตัว
+export const getPMReadingStatusAndColor = (pmReading) => {
+  if (!pmReading || !pmReading.type || pmReading.value === undefined) {
+    return { status: 'Good', color: getAirQualityColor('Good') };
+  }
+
+  let status = 'Good';
+
+  switch (pmReading.type) {
+    case 'PC01':
+      status = determinePC01Status(pmReading.value);
+      break;
+    case 'PM0.1':
+      status = determinePM01Status(pmReading.value);
+      break;
+    case 'PM2.5':
+      status = determinePM25Status(pmReading.value);
+      break;
+    case 'PM10':
+      status = determinePM10Status(pmReading.value);
+      break;
+    default:
+      status = 'Good';
+  }
+
+  const color = getAirQualityColor(status);
+
+  console.log(`=== ${pmReading.type} STATUS ===`);
+  console.log('Value:', pmReading.value);
+  console.log('Status:', status);
+  console.log('Color:', color);
+  console.log('==========================');
+
+  return { status, color };
+};
+
+// ===================================================================
+// Overall Air Quality Function - ฟังก์ชันคำนวณสถานะรวม
+// ===================================================================
+
+// ฟังก์ชันสำหรับคำนวณสถานะคุณภาพอากาศรวม - แก้ไขใหม่
 export const determineAirQuality = (pc01, pm01, pm25, pm10) => {
   try {
     // แปลงค่าทั้งหมดให้เป็นตัวเลขอย่างปลอดภัย
@@ -144,37 +274,53 @@ export const determineAirQuality = (pc01, pm01, pm25, pm10) => {
     const pm25Val = safeParse(pm25);
     const pm10Val = safeParse(pm10);
 
-    // ใช้ threshold เดียวกันสำหรับ pm25 และ pm10 โดยใช้ OR logic
+    console.log('=== DETERMINE AIR QUALITY DEBUG ===');
+    console.log('Input values:', { pc01, pm01, pm25, pm10 });
+    console.log('Parsed values:', { pc01Val, pm01Val, pm25Val, pm10Val });
+
+    // เช็คจากระดับแย่ที่สุดไปดีที่สุด (Hazardous -> Good)
+    // ใช้ OR logic: หากค่าใดค่าหนึ่งเกินเกณฑ์ระดับไหน จะได้สถานะระดับนั้น
+
     if (
-      pc01Val <= PM_THRESHOLDS.PC01.Good ||
-      pm01Val <= PM_THRESHOLDS.PM01.Good ||
-      pm25Val <= PM_THRESHOLDS.PM.Good ||
-      pm10Val <= PM_THRESHOLDS.PM.Good
+      pc01Val > PM_THRESHOLDS.PC01.Danger ||
+      pm01Val > PM_THRESHOLDS.PM01.Danger ||
+      pm25Val > PM_THRESHOLDS.PM.Danger ||
+      pm10Val > PM_THRESHOLDS.PM.Danger
     ) {
-      return "Good";
+      console.log('Status: Hazardous');
+      console.log('===================================');
+      return "Hazardous";
     } else if (
-      pc01Val <= PM_THRESHOLDS.PC01.Warning ||
-      pm01Val <= PM_THRESHOLDS.PM01.Warning ||
-      pm25Val <= PM_THRESHOLDS.PM.Warning ||
-      pm10Val <= PM_THRESHOLDS.PM.Warning
+      pc01Val > PM_THRESHOLDS.PC01['Affects health'] ||
+      pm01Val > PM_THRESHOLDS.PM01['Affects health'] ||
+      pm25Val > PM_THRESHOLDS.PM['Affects health'] ||
+      pm10Val > PM_THRESHOLDS.PM['Affects health']
     ) {
-      return "Warning";
+      console.log('Status: Danger');
+      console.log('===================================');
+      return "Danger";
     } else if (
-      pc01Val <= PM_THRESHOLDS.PC01['Affects health'] ||
-      pm01Val <= PM_THRESHOLDS.PM01['Affects health'] ||
-      pm25Val <= PM_THRESHOLDS.PM['Affects health'] ||
-      pm10Val <= PM_THRESHOLDS.PM['Affects health']
+      pc01Val > PM_THRESHOLDS.PC01.Warning ||
+      pm01Val > PM_THRESHOLDS.PM01.Warning ||
+      pm25Val > PM_THRESHOLDS.PM.Warning ||
+      pm10Val > PM_THRESHOLDS.PM.Warning
     ) {
+      console.log('Status: Affects health');
+      console.log('===================================');
       return "Affects health";
     } else if (
-      pc01Val <= PM_THRESHOLDS.PC01.Danger ||
-      pm01Val <= PM_THRESHOLDS.PM01.Danger ||
-      pm25Val <= PM_THRESHOLDS.PM.Danger ||
-      pm10Val <= PM_THRESHOLDS.PM.Danger
+      pc01Val > PM_THRESHOLDS.PC01.Good ||
+      pm01Val > PM_THRESHOLDS.PM01.Good ||
+      pm25Val > PM_THRESHOLDS.PM.Good ||
+      pm10Val > PM_THRESHOLDS.PM.Good
     ) {
-      return "Danger";
+      console.log('Status: Warning');
+      console.log('===================================');
+      return "Warning";
     } else {
-      return "Hazardous";
+      console.log('Status: Good');
+      console.log('===================================');
+      return "Good";
     }
   } catch (error) {
     console.error('Error in determineAirQuality:', error);
@@ -204,9 +350,34 @@ const transformToComponentFormat = (data, locationName, dataSource = 'testing') 
     const temperature = safeParse(data.temperature || data.IndoorTemperature, 25.5);
     const humidity = safeParse(data.humidity || data.IndoorHumidity, 65);
 
-    // คำนวณสถานะคุณภาพอากาศ
-    const status = determineAirQuality(pc01, pm01, pm25, pm10);
-    const recommendations = getGeneralRecommendations(status);
+    console.log('=== TRANSFORM DEBUG ===');
+    console.log('Raw Firebase Data:', data);
+    console.log('Parsed Values:');
+    console.log('  PC01:', pc01);
+    console.log('  PM01:', pm01);
+    console.log('  PM25:', pm25);
+    console.log('  PM10:', pm10);
+
+    // คำนวณสถานะรวม (สำหรับ mainReading)
+    const overallStatus = determineAirQuality(pc01, pm01, pm25, pm10);
+    console.log('Overall Status:', overallStatus);
+
+    // *** สำคัญ: คำนวณสถานะของแต่ละค่า PM แยกกัน ***
+    const pc01Status = determinePC01Status(pc01);
+    const pm01Status = determinePM01Status(pm01);
+    const pm25Status = determinePM25Status(pm25);
+    const pm10Status = determinePM10Status(pm10);
+
+    console.log('Individual Statuses:');
+    console.log('  PC01 Status:', pc01Status);
+    console.log('  PM01 Status:', pm01Status);
+    console.log('  PM25 Status:', pm25Status);
+    console.log('  PM10 Status:', pm10Status);
+
+    // *** สำคัญ: ดึงคำแนะนำใหม่ทุกครั้งตาม status ที่คำนวณได้ ***
+    const recommendations = getGeneralRecommendations(overallStatus);
+    console.log('Recommendations:', recommendations);
+    console.log('=======================');
 
     // สร้างข้อมูลในรูปแบบที่ component หลักต้องการ
     const transformedData = {
@@ -214,12 +385,12 @@ const transformToComponentFormat = (data, locationName, dataSource = 'testing') 
       time: data.timestamp || getCurrentTime(),
       location: locationName || 'Unknown Location',
 
-      // ส่วนสำคัญ - mainReading ต้องมีครบทุก property
+      // *** สำคัญ - mainReading ใช้สถานะรวม ***
       mainReading: {
         type: dataSource === 'testing' ? 'PC0.1' : 'PM0.1',
         value: dataSource === 'testing' ? pc01 : pm01,
         unit: dataSource === 'testing' ? 'PNC' : 'μg/m³',
-        status: status // นี่คือส่วนที่สำคัญที่ต้องมีเสมอ
+        status: overallStatus // ใช้สถานะรวมสำหรับ main reading
       },
 
       conditions: {
@@ -227,36 +398,48 @@ const transformToComponentFormat = (data, locationName, dataSource = 'testing') 
         humidity: `${humidity}%`
       },
 
-      // สร้าง pmReadings ในรูปแบบที่ component คาดหวัง
+      // *** สำคัญ: pmReadings ใช้สถานะแยกของแต่ละค่า ***
       pmReadings: [
         {
           type: 'PC01',
           value: pc01,
-          unit: 'PNC'
+          unit: 'PNC',
+          status: pc01Status // เพิ่ม status แยกสำหรับ PC01
         },
         {
           type: 'PM0.1',
           value: pm01,
-          unit: 'μg/m³'
+          unit: 'μg/m³',
+          status: pm01Status // เพิ่ม status แยกสำหรับ PM01
         },
         {
           type: 'PM2.5',
           value: pm25,
-          unit: 'μg/m³'
+          unit: 'μg/m³',
+          status: pm25Status // เพิ่ม status แยกสำหรับ PM2.5
         },
         {
           type: 'PM10',
           value: pm10,
-          unit: 'μg/m³'
+          unit: 'μg/m³',
+          status: pm10Status // เพิ่ม status แยกสำหรับ PM10
         }
       ],
 
-      recommendations: recommendations,
+      recommendations: recommendations, // ใช้ recommendations ที่คำนวณใหม่
 
       // ข้อมูลเมตาเพื่อการ debug
       _rawData: data,
       _dataSource: dataSource,
-      _isValid: hasValidData(data)
+      _isValid: hasValidData(data),
+      _calculatedStatus: overallStatus, // เพิ่มเพื่อ debug
+      _individualStatuses: { // เพิ่มสำหรับ debug
+        pc01: pc01Status,
+        pm01: pm01Status,
+        pm25: pm25Status,
+        pm10: pm10Status
+      },
+      _timestamp: new Date().toISOString() // เพิ่ม timestamp เพื่อตรวจสอบการอัพเดท
     };
 
     // Debug logging
@@ -264,8 +447,8 @@ const transformToComponentFormat = (data, locationName, dataSource = 'testing') 
     console.log('Location:', locationName);
     console.log('Data Source:', dataSource);
     console.log('Main Reading:', transformedData.mainReading);
-    console.log('PM Readings:', transformedData.pmReadings);
-    console.log('Status:', status);
+    console.log('PM Readings with Individual Status:', transformedData.pmReadings);
+    console.log('Individual Statuses:', transformedData._individualStatuses);
     console.log('Is Valid Data:', hasValidData(data));
     console.log('========================');
 
@@ -297,10 +480,10 @@ const createFallbackData = (locationName, dataSource = 'testing') => {
     },
 
     pmReadings: [
-      { type: 'PC01', value: 0, unit: 'PNC' },
-      { type: 'PM0.1', value: 0, unit: 'μg/m³' },
-      { type: 'PM2.5', value: 0, unit: 'μg/m³' },
-      { type: 'PM10', value: 0, unit: 'μg/m³' }
+      { type: 'PC01', value: 0, unit: 'PNC', status: 'Good' },
+      { type: 'PM0.1', value: 0, unit: 'μg/m³', status: 'Good' },
+      { type: 'PM2.5', value: 0, unit: 'μg/m³', status: 'Good' },
+      { type: 'PM10', value: 0, unit: 'μg/m³', status: 'Good' }
     ],
 
     recommendations: [
@@ -391,6 +574,12 @@ export const useLocationMonitoringData = (locationData) => {
             ...dataCollector.testing,
             ...dataCollector.raw
           };
+
+          console.log('=== COMBINED DATA ===');
+          console.log('Testing data:', dataCollector.testing);
+          console.log('RAW data:', dataCollector.raw);
+          console.log('Combined data:', combinedData);
+          console.log('=====================');
 
           // ตรวจสอบว่ามีข้อมูลที่ใช้งานได้หรือไม่
           if (hasValidData(combinedData) || dataCollector.testingReceived) {

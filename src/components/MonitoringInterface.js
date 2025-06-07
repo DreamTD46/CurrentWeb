@@ -12,7 +12,8 @@ import {
   useLocationMonitoringData,
   getGeneralRecommendations,
   getSensitiveRecommendations,
-  determineAirQuality
+  determineAirQuality,
+  getPMReadingStatusAndColor // เพิ่มการ import ฟังก์ชันใหม่
 } from '../data/monitoring-data';
 
 // Import Live Activity Animation Components
@@ -436,46 +437,44 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear }) => {
           <div className="grid grid-cols-2 gap-1 sm:gap-2">
             {isDataValid ? (
               (() => {
-                // กรองเฉพาะ PM2.5 และ PM10 สำหรับแสดงผลในส่วนนี้
-                // วิธีการนี้จะค้นหาข้อมูล PM2.5 และ PM10 โดยตรงจาก array ของ readings
+                // กรองเฉพาะ PM2.5 และ PM10
                 const pm25Reading = data.pmReadings.find(r => r && r.type === 'PM2.5');
                 const pm10Reading = data.pmReadings.find(r => r && r.type === 'PM10');
 
-                // Debug logging เพื่อช่วยในการตรวจสอบข้อมูล
                 console.log('=== PM SUMMARY CARD DEBUG ===');
                 console.log('All PM Readings:', data.pmReadings);
                 console.log('PM2.5 Reading:', pm25Reading);
                 console.log('PM10 Reading:', pm10Reading);
                 console.log('============================');
 
-                // สร้าง array ของข้อมูลที่จะแสดง โดยกรองเอาเฉพาะข้อมูลที่มีจริง
                 const pmDataToShow = [pm25Reading, pm10Reading].filter(Boolean);
 
                 return pmDataToShow.length > 0 ? pmDataToShow.map((reading, index) => {
-                  // แปลงค่าให้เป็นตัวเลขโดยจัดการกับ data types ต่างๆ
+                  // แปลงค่าให้เป็นตัวเลข
                   let numericValue = 0;
                   if (typeof reading.value === 'number') {
                     numericValue = reading.value;
                   } else if (reading.value !== undefined) {
-                    // ลบอักขระที่ไม่ใช่ตัวเลข จุดทศนิยม และเครื่องหมายลบออก
                     numericValue = parseFloat(String(reading.value).replace(/[^\d.-]/g, '')) || 0;
                   }
 
-                  // คำนวณสถานะคุณภาพอากาศสำหรับการ์ดแต่ละใบ
-                  // การคำนวณนี้จะใช้ข้อมูล PM ทั้งหมดเพื่อให้ได้สถานะที่แม่นยำ
-                  const pc01Value = getSafeValue(data.pmReadings, 'PC01');
-                  const pm01Value = getSafeValue(data.pmReadings, 'PM0.1');
-                  const pm25Value = reading.type === 'PM2.5' ? numericValue : getSafeValue(data.pmReadings, 'PM2.5');
-                  const pm10Value = reading.type === 'PM10' ? numericValue : getSafeValue(data.pmReadings, 'PM10');
+                  // *** สำคัญ: ใช้สถานะและสีของแต่ละค่า PM แยกกัน ***
+                  const { status: individualStatus, color: individualColor } = getPMReadingStatusAndColor({
+                    type: reading.type,
+                    value: numericValue
+                  });
 
-                  const status = determineAirQuality(pc01Value, pm01Value, pm25Value, pm10Value);
-                  const bgColor = getAirQualityColor(status);
+                  console.log(`=== ${reading.type} INDIVIDUAL STATUS ===`);
+                  console.log('Value:', numericValue);
+                  console.log('Individual Status:', individualStatus);
+                  console.log('Individual Color:', individualColor);
+                  console.log('=====================================');
 
                   return (
                     <div
                       key={`${reading.type}-${selectedLocation?.id || 'default'}-${index}`}
                       className="rounded-lg p-1 sm:p-2 text-white text-center"
-                      style={{ backgroundColor: bgColor }}
+                      style={{ backgroundColor: individualColor }}
                     >
                       <div className="text-sm sm:text-base lg:text-lg font-medium mb-1 opacity-90 font-montserrat">
                         {reading.type}
@@ -493,6 +492,11 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear }) => {
 
                       <div className="text-xs sm:text-sm lg:text-base opacity-90 font-montserrat">
                         μg/m³
+                      </div>
+
+                      {/* เพิ่มแสดงสถานะของแต่ละค่า PM (ถ้าต้องการ) */}
+                      <div className="text-xs opacity-75 mt-1 font-montserrat">
+                        {individualStatus}
                       </div>
                     </div>
                   );
