@@ -206,10 +206,10 @@ const MonitoringPanel = ({ data })=>/*#__PURE__*/ (0, __TURBOPACK__imported__mod
                                             columnNumber: 13
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: "text-base text-center",
+                                            className: "text-center",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "text-base font-medium",
+                                                    className: "font-medium",
                                                     children: data.mainReading.status
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
@@ -217,7 +217,7 @@ const MonitoringPanel = ({ data })=>/*#__PURE__*/ (0, __TURBOPACK__imported__mod
                                                     columnNumber: 15
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "text-base opacity-90",
+                                                    className: "text-xs opacity-90",
                                                     children: data.mainReading.note
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
@@ -242,10 +242,10 @@ const MonitoringPanel = ({ data })=>/*#__PURE__*/ (0, __TURBOPACK__imported__mod
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "text-base grid grid-cols-2 gap-4 text-sm text-gray-600",
+                                className: "grid grid-cols-2 gap-4 text-sm text-gray-600",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "text-base text-center flex flex-col items-center gap-1",
+                                        className: "text-center flex flex-col items-center gap-1",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$thermometer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Thermometer$3e$__["Thermometer"], {
                                                 className: "w-4 h-4 text-gray-400"
@@ -455,18 +455,15 @@ const Footer = ()=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$
                         className: "flex-col",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                             className: "text-sm text-gray-700 max-w-xl",
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                    className: "text-3xl font-bold text-black mb-1",
-                                    children: "Mupcop"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 128,
-                                    columnNumber: 11
-                                }, this),
-                                " Multi factor ultrafine particle (PM0.1) concentration optimization prediction"
-                            ]
-                        }, void 0, true, {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "text-3xl font-bold text-black mb-1",
+                                children: "Mupcop"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/MonitoringInterface.js",
+                                lineNumber: 128,
+                                columnNumber: 11
+                            }, this)
+                        }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
                             lineNumber: 127,
                             columnNumber: 9

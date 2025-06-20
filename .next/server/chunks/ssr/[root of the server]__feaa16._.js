@@ -128,7 +128,7 @@ const LOCATION_CONFIGS = {
         ],
         firebaseConfig: C4_FIREBASE_CONFIG,
         // C4 ใช้ RAWdata สำหรับทั้ง PM และ อุณหภูมิ/ความชื้น
-        dataSource: 'raw',
+        dataSource: 'testing',
         pieraUserId: null,
         pieraPath: null,
         testingPath: 'Lab',
@@ -144,10 +144,15 @@ var { r: __turbopack_require__, f: __turbopack_module_context__, i: __turbopack_
 __turbopack_esm__({
     "PM_THRESHOLDS": (()=>PM_THRESHOLDS),
     "determineAirQuality": (()=>determineAirQuality),
+    "determinePC01Status": (()=>determinePC01Status),
+    "determinePM01Status": (()=>determinePM01Status),
+    "determinePM10Status": (()=>determinePM10Status),
+    "determinePM25Status": (()=>determinePM25Status),
     "formatPCValue": (()=>formatPCValue),
     "formatPMValue": (()=>formatPMValue),
     "getAirQualityColor": (()=>getAirQualityColor),
     "getGeneralRecommendations": (()=>getGeneralRecommendations),
+    "getPMReadingStatusAndColor": (()=>getPMReadingStatusAndColor),
     "getRecommendationIcon": (()=>getRecommendationIcon),
     "getSensitiveRecommendations": (()=>getSensitiveRecommendations),
     "useLocationMonitoringData": (()=>useLocationMonitoringData),
@@ -270,6 +275,113 @@ const PM_THRESHOLDS = {
         Hazardous: Number.MAX_VALUE
     }
 };
+const determinePC01Status = (pc01Value)=>{
+    const pc01Val = safeParse(pc01Value);
+    if (pc01Val > PM_THRESHOLDS.PC01.Danger) {
+        return "Hazardous";
+    } else if (pc01Val > PM_THRESHOLDS.PC01['Affects health']) {
+        return "Danger";
+    } else if (pc01Val > PM_THRESHOLDS.PC01.Warning) {
+        return "Affects health";
+    } else if (pc01Val > PM_THRESHOLDS.PC01.Good) {
+        return "Warning";
+    } else {
+        return "Good";
+    }
+};
+const determinePM01Status = (pm01Value)=>{
+    const pm01Val = safeParse(pm01Value);
+    if (pm01Val > PM_THRESHOLDS.PM01.Danger) {
+        return "Hazardous";
+    } else if (pm01Val > PM_THRESHOLDS.PM01['Affects health']) {
+        return "Danger";
+    } else if (pm01Val > PM_THRESHOLDS.PM01.Warning) {
+        return "Affects health";
+    } else if (pm01Val > PM_THRESHOLDS.PM01.Good) {
+        return "Warning";
+    } else {
+        return "Good";
+    }
+};
+const determinePM25Status = (pm25Value)=>{
+    const pm25Val = safeParse(pm25Value);
+    console.log('=== PM2.5 STATUS CALCULATION ===');
+    console.log('PM2.5 Value:', pm25Val);
+    console.log('Thresholds:', PM_THRESHOLDS.PM);
+    if (pm25Val > PM_THRESHOLDS.PM.Danger) {
+        console.log('PM2.5 Status: Hazardous');
+        return "Hazardous";
+    } else if (pm25Val > PM_THRESHOLDS.PM['Affects health']) {
+        console.log('PM2.5 Status: Danger');
+        return "Danger";
+    } else if (pm25Val > PM_THRESHOLDS.PM.Warning) {
+        console.log('PM2.5 Status: Affects health');
+        return "Affects health";
+    } else if (pm25Val > PM_THRESHOLDS.PM.Good) {
+        console.log('PM2.5 Status: Warning');
+        return "Warning";
+    } else {
+        console.log('PM2.5 Status: Good');
+        return "Good";
+    }
+};
+const determinePM10Status = (pm10Value)=>{
+    const pm10Val = safeParse(pm10Value);
+    console.log('=== PM10 STATUS CALCULATION ===');
+    console.log('PM10 Value:', pm10Val);
+    console.log('Thresholds:', PM_THRESHOLDS.PM);
+    if (pm10Val > PM_THRESHOLDS.PM.Danger) {
+        console.log('PM10 Status: Hazardous');
+        return "Hazardous";
+    } else if (pm10Val > PM_THRESHOLDS.PM['Affects health']) {
+        console.log('PM10 Status: Danger');
+        return "Danger";
+    } else if (pm10Val > PM_THRESHOLDS.PM.Warning) {
+        console.log('PM10 Status: Affects health');
+        return "Affects health";
+    } else if (pm10Val > PM_THRESHOLDS.PM.Good) {
+        console.log('PM10 Status: Warning');
+        return "Warning";
+    } else {
+        console.log('PM10 Status: Good');
+        return "Good";
+    }
+};
+const getPMReadingStatusAndColor = (pmReading)=>{
+    if (!pmReading || !pmReading.type || pmReading.value === undefined) {
+        return {
+            status: 'Good',
+            color: getAirQualityColor('Good')
+        };
+    }
+    let status = 'Good';
+    switch(pmReading.type){
+        case 'PC01':
+            status = determinePC01Status(pmReading.value);
+            break;
+        case 'PM0.1':
+            status = determinePM01Status(pmReading.value);
+            break;
+        case 'PM2.5':
+            status = determinePM25Status(pmReading.value);
+            break;
+        case 'PM10':
+            status = determinePM10Status(pmReading.value);
+            break;
+        default:
+            status = 'Good';
+    }
+    const color = getAirQualityColor(status);
+    console.log(`=== ${pmReading.type} STATUS ===`);
+    console.log('Value:', pmReading.value);
+    console.log('Status:', status);
+    console.log('Color:', color);
+    console.log('==========================');
+    return {
+        status,
+        color
+    };
+};
 const determineAirQuality = (pc01, pm01, pm25, pm10)=>{
     try {
         // แปลงค่าทั้งหมดให้เป็นตัวเลขอย่างปลอดภัย
@@ -277,17 +389,41 @@ const determineAirQuality = (pc01, pm01, pm25, pm10)=>{
         const pm01Val = safeParse(pm01);
         const pm25Val = safeParse(pm25);
         const pm10Val = safeParse(pm10);
-        // ใช้ threshold เดียวกันสำหรับ pm25 และ pm10 โดยใช้ OR logic
-        if (pc01Val <= PM_THRESHOLDS.PC01.Good || pm01Val <= PM_THRESHOLDS.PM01.Good || pm25Val <= PM_THRESHOLDS.PM.Good || pm10Val <= PM_THRESHOLDS.PM.Good) {
-            return "Good";
-        } else if (pc01Val <= PM_THRESHOLDS.PC01.Warning || pm01Val <= PM_THRESHOLDS.PM01.Warning || pm25Val <= PM_THRESHOLDS.PM.Warning || pm10Val <= PM_THRESHOLDS.PM.Warning) {
-            return "Warning";
-        } else if (pc01Val <= PM_THRESHOLDS.PC01['Affects health'] || pm01Val <= PM_THRESHOLDS.PM01['Affects health'] || pm25Val <= PM_THRESHOLDS.PM['Affects health'] || pm10Val <= PM_THRESHOLDS.PM['Affects health']) {
-            return "Affects health";
-        } else if (pc01Val <= PM_THRESHOLDS.PC01.Danger || pm01Val <= PM_THRESHOLDS.PM01.Danger || pm25Val <= PM_THRESHOLDS.PM.Danger || pm10Val <= PM_THRESHOLDS.PM.Danger) {
-            return "Danger";
-        } else {
+        console.log('=== DETERMINE AIR QUALITY DEBUG ===');
+        console.log('Input values:', {
+            pc01,
+            pm01,
+            pm25,
+            pm10
+        });
+        console.log('Parsed values:', {
+            pc01Val,
+            pm01Val,
+            pm25Val,
+            pm10Val
+        });
+        // เช็คจากระดับแย่ที่สุดไปดีที่สุด (Hazardous -> Good)
+        // ใช้ OR logic: หากค่าใดค่าหนึ่งเกินเกณฑ์ระดับไหน จะได้สถานะระดับนั้น
+        if (pc01Val > PM_THRESHOLDS.PC01.Danger || pm01Val > PM_THRESHOLDS.PM01.Danger || pm25Val > PM_THRESHOLDS.PM.Danger || pm10Val > PM_THRESHOLDS.PM.Danger) {
+            console.log('Status: Hazardous');
+            console.log('===================================');
             return "Hazardous";
+        } else if (pc01Val > PM_THRESHOLDS.PC01['Affects health'] || pm01Val > PM_THRESHOLDS.PM01['Affects health'] || pm25Val > PM_THRESHOLDS.PM['Affects health'] || pm10Val > PM_THRESHOLDS.PM['Affects health']) {
+            console.log('Status: Danger');
+            console.log('===================================');
+            return "Danger";
+        } else if (pc01Val > PM_THRESHOLDS.PC01.Warning || pm01Val > PM_THRESHOLDS.PM01.Warning || pm25Val > PM_THRESHOLDS.PM.Warning || pm10Val > PM_THRESHOLDS.PM.Warning) {
+            console.log('Status: Affects health');
+            console.log('===================================');
+            return "Affects health";
+        } else if (pc01Val > PM_THRESHOLDS.PC01.Good || pm01Val > PM_THRESHOLDS.PM01.Good || pm25Val > PM_THRESHOLDS.PM.Good || pm10Val > PM_THRESHOLDS.PM.Good) {
+            console.log('Status: Warning');
+            console.log('===================================');
+            return "Warning";
+        } else {
+            console.log('Status: Good');
+            console.log('===================================');
+            return "Good";
         }
     } catch (error) {
         console.error('Error in determineAirQuality:', error);
@@ -312,61 +448,94 @@ const transformToComponentFormat = (data, locationName, dataSource = 'testing')=
         // ดึงข้อมูลสภาพแวดล้อม
         const temperature = safeParse(data.temperature || data.IndoorTemperature, 25.5);
         const humidity = safeParse(data.humidity || data.IndoorHumidity, 65);
-        // คำนวณสถานะคุณภาพอากาศ
-        const status = determineAirQuality(pc01, pm01, pm25, pm10);
-        const recommendations = getGeneralRecommendations(status);
+        console.log('=== TRANSFORM DEBUG ===');
+        console.log('Raw Firebase Data:', data);
+        console.log('Parsed Values:');
+        console.log('  PC01:', pc01);
+        console.log('  PM01:', pm01);
+        console.log('  PM25:', pm25);
+        console.log('  PM10:', pm10);
+        // คำนวณสถานะรวม (สำหรับ mainReading)
+        const overallStatus = determineAirQuality(pc01, pm01, pm25, pm10);
+        console.log('Overall Status:', overallStatus);
+        // *** สำคัญ: คำนวณสถานะของแต่ละค่า PM แยกกัน ***
+        const pc01Status = determinePC01Status(pc01);
+        const pm01Status = determinePM01Status(pm01);
+        const pm25Status = determinePM25Status(pm25);
+        const pm10Status = determinePM10Status(pm10);
+        console.log('Individual Statuses:');
+        console.log('  PC01 Status:', pc01Status);
+        console.log('  PM01 Status:', pm01Status);
+        console.log('  PM25 Status:', pm25Status);
+        console.log('  PM10 Status:', pm10Status);
+        // *** สำคัญ: ดึงคำแนะนำใหม่ทุกครั้งตาม status ที่คำนวณได้ ***
+        const recommendations = getGeneralRecommendations(overallStatus);
+        console.log('Recommendations:', recommendations);
+        console.log('=======================');
         // สร้างข้อมูลในรูปแบบที่ component หลักต้องการ
         const transformedData = {
             date: formatDisplayDate(new Date()),
             time: data.timestamp || getCurrentTime(),
             location: locationName || 'Unknown Location',
-            // ส่วนสำคัญ - mainReading ต้องมีครบทุก property
+            // *** สำคัญ - mainReading ใช้สถานะรวม ***
             mainReading: {
                 type: dataSource === 'testing' ? 'PC0.1' : 'PM0.1',
                 value: dataSource === 'testing' ? pc01 : pm01,
                 unit: dataSource === 'testing' ? 'PNC' : 'μg/m³',
-                status: status // นี่คือส่วนที่สำคัญที่ต้องมีเสมอ
+                status: overallStatus // ใช้สถานะรวมสำหรับ main reading
             },
             conditions: {
                 temperature: `${temperature}°C`,
                 humidity: `${humidity}%`
             },
-            // สร้าง pmReadings ในรูปแบบที่ component คาดหวัง
+            // *** สำคัญ: pmReadings ใช้สถานะแยกของแต่ละค่า ***
             pmReadings: [
                 {
                     type: 'PC01',
                     value: pc01,
-                    unit: 'PNC'
+                    unit: 'PNC',
+                    status: pc01Status // เพิ่ม status แยกสำหรับ PC01
                 },
                 {
                     type: 'PM0.1',
                     value: pm01,
-                    unit: 'μg/m³'
+                    unit: 'μg/m³',
+                    status: pm01Status // เพิ่ม status แยกสำหรับ PM01
                 },
                 {
                     type: 'PM2.5',
                     value: pm25,
-                    unit: 'μg/m³'
+                    unit: 'μg/m³',
+                    status: pm25Status // เพิ่ม status แยกสำหรับ PM2.5
                 },
                 {
                     type: 'PM10',
                     value: pm10,
-                    unit: 'μg/m³'
+                    unit: 'μg/m³',
+                    status: pm10Status // เพิ่ม status แยกสำหรับ PM10
                 }
             ],
             recommendations: recommendations,
             // ข้อมูลเมตาเพื่อการ debug
             _rawData: data,
             _dataSource: dataSource,
-            _isValid: hasValidData(data)
+            _isValid: hasValidData(data),
+            _calculatedStatus: overallStatus,
+            _individualStatuses: {
+                pc01: pc01Status,
+                pm01: pm01Status,
+                pm25: pm25Status,
+                pm10: pm10Status
+            },
+            _timestamp: new Date().toISOString() // เพิ่ม timestamp เพื่อตรวจสอบการอัพเดท
         };
         // Debug logging
         console.log('=== TRANSFORMED DATA ===');
         console.log('Location:', locationName);
         console.log('Data Source:', dataSource);
         console.log('Main Reading:', transformedData.mainReading);
-        console.log('PM Readings:', transformedData.pmReadings);
-        console.log('Status:', status);
+        console.log('PM Readings with Individual Status:', transformedData.pmReadings);
+        console.log('Individual Statuses:', transformedData._individualStatuses);
         console.log('Is Valid Data:', hasValidData(data));
         console.log('========================');
         return transformedData;
@@ -395,22 +564,26 @@ const createFallbackData = (locationName, dataSource = 'testing')=>{
             {
                 type: 'PC01',
                 value: 0,
-                unit: 'PNC'
+                unit: 'PNC',
+                status: 'Good'
             },
             {
                 type: 'PM0.1',
                 value: 0,
-                unit: 'μg/m³'
+                unit: 'μg/m³',
+                status: 'Good'
             },
             {
                 type: 'PM2.5',
                 value: 0,
-                unit: 'μg/m³'
+                unit: 'μg/m³',
+                status: 'Good'
             },
             {
                 type: 'PM10',
                 value: 0,
-                unit: 'μg/m³'
+                unit: 'μg/m³',
+                status: 'Good'
             }
         ],
         recommendations: [
@@ -484,6 +657,11 @@ const useLocationMonitoringData = (locationData)=>{
                         ...dataCollector.testing,
                         ...dataCollector.raw
                     };
+                    console.log('=== COMBINED DATA ===');
+                    console.log('Testing data:', dataCollector.testing);
+                    console.log('RAW data:', dataCollector.raw);
+                    console.log('Combined data:', combinedData);
+                    console.log('=====================');
                     // ตรวจสอบว่ามีข้อมูลที่ใช้งานได้หรือไม่
                     if (hasValidData(combinedData) || dataCollector.testingReceived) {
                         const transformedData = transformToComponentFormat(combinedData, locationData.name, dataSource);
@@ -1495,12 +1673,12 @@ const Header = ()=>{
                                 height: 96
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 37,
+                                lineNumber: 38,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 36,
+                            lineNumber: 37,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1510,7 +1688,7 @@ const Header = ()=>{
                                     children: "Mupcop"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 46,
+                                    lineNumber: 47,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1518,19 +1696,19 @@ const Header = ()=>{
                                     children: "Multi-factor ultrafine particle optimization prediction"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 47,
+                                    lineNumber: 48,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 45,
+                            lineNumber: 46,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/MonitoringInterface.js",
-                    lineNumber: 35,
+                    lineNumber: 36,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
@@ -1542,7 +1720,7 @@ const Header = ()=>{
                             children: "Air quality"
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 54,
+                            lineNumber: 55,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -1551,13 +1729,13 @@ const Header = ()=>{
                             children: "History data"
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 57,
+                            lineNumber: 58,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/MonitoringInterface.js",
-                    lineNumber: 53,
+                    lineNumber: 54,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1567,29 +1745,29 @@ const Header = ()=>{
                         size: 24
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 66,
+                        lineNumber: 67,
                         columnNumber: 25
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$menu$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Menu$3e$__["Menu"], {
                         size: 24
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 66,
+                        lineNumber: 67,
                         columnNumber: 43
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/components/MonitoringInterface.js",
-                    lineNumber: 62,
+                    lineNumber: 63,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/MonitoringInterface.js",
-            lineNumber: 34,
+            lineNumber: 35,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 33,
+        lineNumber: 34,
         columnNumber: 5
     }, this);
 };
@@ -1682,7 +1860,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         className: "animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mb-3"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 171,
+                        lineNumber: 172,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1690,18 +1868,18 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         children: "กำลังโหลดข้อมูล..."
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 172,
+                        lineNumber: 173,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 170,
+                lineNumber: 171,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/MonitoringInterface.js",
-            lineNumber: 169,
+            lineNumber: 170,
             columnNumber: 7
         }, this);
     }
@@ -1717,7 +1895,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         children: "⚠️"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 183,
+                        lineNumber: 184,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1728,7 +1906,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 184,
+                        lineNumber: 185,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1737,18 +1915,18 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         children: "รีเฟรช"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 185,
+                        lineNumber: 186,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 182,
+                lineNumber: 183,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/MonitoringInterface.js",
-            lineNumber: 181,
+            lineNumber: 182,
             columnNumber: 7
         }, this);
     }
@@ -1764,7 +1942,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         children: "📭"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 201,
+                        lineNumber: 202,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1772,18 +1950,18 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                         children: "ไม่มีข้อมูล"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 202,
+                        lineNumber: 203,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 200,
+                lineNumber: 201,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/MonitoringInterface.js",
-            lineNumber: 199,
+            lineNumber: 200,
             columnNumber: 7
         }, this);
     }
@@ -1802,7 +1980,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                 children: "UFPs Monitoring"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 214,
+                                lineNumber: 215,
                                 columnNumber: 11
                             }, this),
                             selectedLocation && onLocationClear && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1811,13 +1989,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                 children: "× ล้าง"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 216,
+                                lineNumber: 217,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 213,
+                        lineNumber: 214,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1833,7 +2011,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 className: "w-3 h-3 bg-green-500 rounded-full animate-pulse"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 230,
+                                                lineNumber: 231,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1841,13 +2019,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 children: "LIVE"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 231,
+                                                lineNumber: 232,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 229,
+                                        lineNumber: 230,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1855,13 +2033,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                         children: data.date || 'N/A'
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 233,
+                                        lineNumber: 234,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 228,
+                                lineNumber: 229,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1876,7 +2054,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     className: "w-4 h-4 sm:w-5 sm:h-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 240,
+                                                    lineNumber: 241,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1884,13 +2062,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     children: selectedLocation ? selectedLocation.name : data.location || "Cafe Amazon สาขา ST"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 241,
+                                                    lineNumber: 242,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 239,
+                                            lineNumber: 240,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1901,7 +2079,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     children: "อัพเดท: "
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 246,
+                                                    lineNumber: 247,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1909,24 +2087,24 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     children: data.time || 'N/A'
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 247,
+                                                    lineNumber: 248,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 245,
+                                            lineNumber: 246,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 238,
+                                    lineNumber: 239,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 237,
+                                lineNumber: 238,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1942,7 +2120,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 className: "absolute inset-0 bg-black bg-opacity-30"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 259,
+                                                lineNumber: 260,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1953,7 +2131,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                         children: data.mainReading?.type || 'PC0.1'
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 261,
+                                                        lineNumber: 262,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1971,12 +2149,12 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             direction: "right-to-left"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 265,
+                                                            lineNumber: 266,
                                                             columnNumber: 19
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 264,
+                                                        lineNumber: 265,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1984,19 +2162,19 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                         children: data.mainReading?.unit || 'PNC'
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 275,
+                                                        lineNumber: 276,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 260,
+                                                lineNumber: 261,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 255,
+                                        lineNumber: 256,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2021,12 +2199,12 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             children: "shield_person"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 293,
+                                                            lineNumber: 294,
                                                             columnNumber: 19
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 292,
+                                                        lineNumber: 293,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2037,7 +2215,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                                 children: "กลุ่มเปราะบาง"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 304,
+                                                                lineNumber: 305,
                                                                 columnNumber: 19
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2048,13 +2226,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                                 children: sensitiveStatus
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 307,
+                                                                lineNumber: 308,
                                                                 columnNumber: 19
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 303,
+                                                        lineNumber: 304,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2062,13 +2240,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                         children: "→"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 311,
+                                                        lineNumber: 312,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 287,
+                                                lineNumber: 288,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2087,12 +2265,12 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             children: "person"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 323,
+                                                            lineNumber: 324,
                                                             columnNumber: 19
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 322,
+                                                        lineNumber: 323,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2103,7 +2281,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                                 children: "กลุ่มคนทั่วไป"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 334,
+                                                                lineNumber: 335,
                                                                 columnNumber: 19
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2114,13 +2292,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                                 children: generalStatus
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 337,
+                                                                lineNumber: 338,
                                                                 columnNumber: 19
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 333,
+                                                        lineNumber: 334,
                                                         columnNumber: 17
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2128,25 +2306,25 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                         children: "→"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 341,
+                                                        lineNumber: 342,
                                                         columnNumber: 17
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 317,
+                                                lineNumber: 318,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 282,
+                                        lineNumber: 283,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 253,
+                                lineNumber: 254,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2165,7 +2343,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 352,
+                                                lineNumber: 353,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$thermometer$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Thermometer$3e$__["Thermometer"], {
@@ -2175,7 +2353,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 361,
+                                                lineNumber: 362,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$Animation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["LiveActivityNumber"], {
@@ -2186,7 +2364,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 showChangeIndicator: false
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 362,
+                                                lineNumber: 363,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2194,13 +2372,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 children: "°C"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 369,
+                                                lineNumber: 370,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 351,
+                                        lineNumber: 352,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2216,7 +2394,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 374,
+                                                lineNumber: 375,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$droplets$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Droplets$3e$__["Droplets"], {
@@ -2226,7 +2404,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 }
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 383,
+                                                lineNumber: 384,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$Animation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["LiveActivityNumber"], {
@@ -2238,7 +2416,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 direction: "left-to-right"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 384,
+                                                lineNumber: 385,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2246,19 +2424,19 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                 children: "%"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 392,
+                                                lineNumber: 393,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 373,
+                                        lineNumber: 374,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 349,
+                                lineNumber: 350,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2284,14 +2462,14 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 407,
+                                                            lineNumber: 408,
                                                             columnNumber: 25
                                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                             className: "text-sm sm:text-base lg:text-lg",
                                                             children: iconPath
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 417,
+                                                            lineNumber: 418,
                                                             columnNumber: 25
                                                         }, this),
                                                         isImageIcon && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2302,19 +2480,19 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             children: "•"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 420,
+                                                            lineNumber: 421,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, index, true, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 405,
+                                                    lineNumber: 406,
                                                     columnNumber: 21
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 399,
+                                            lineNumber: 400,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2322,24 +2500,24 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                             children: "คลิกที่ bubble สีด้านบนเพื่อดูคำแนะนำสำหรับแต่ละกลุ่ม"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 426,
+                                            lineNumber: 427,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 398,
+                                    lineNumber: 399,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 397,
+                                lineNumber: 398,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 226,
+                        lineNumber: 227,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2350,48 +2528,46 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                 children: "ข้อมูลมลพิษทางอากาศ"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 435,
+                                lineNumber: 436,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "grid grid-cols-2 gap-1 sm:gap-2",
                                 children: isDataValid ? (()=>{
-                                    // กรองเฉพาะ PM2.5 และ PM10 สำหรับแสดงผลในส่วนนี้
-                                    // วิธีการนี้จะค้นหาข้อมูล PM2.5 และ PM10 โดยตรงจาก array ของ readings
+                                    // กรองเฉพาะ PM2.5 และ PM10
                                     const pm25Reading = data.pmReadings.find((r)=>r && r.type === 'PM2.5');
                                     const pm10Reading = data.pmReadings.find((r)=>r && r.type === 'PM10');
-                                    // Debug logging เพื่อช่วยในการตรวจสอบข้อมูล
                                     console.log('=== PM SUMMARY CARD DEBUG ===');
                                     console.log('All PM Readings:', data.pmReadings);
                                     console.log('PM2.5 Reading:', pm25Reading);
                                     console.log('PM10 Reading:', pm10Reading);
                                     console.log('============================');
-                                    // สร้าง array ของข้อมูลที่จะแสดง โดยกรองเอาเฉพาะข้อมูลที่มีจริง
                                     const pmDataToShow = [
                                         pm25Reading,
                                         pm10Reading
                                     ].filter(Boolean);
                                     return pmDataToShow.length > 0 ? pmDataToShow.map((reading, index)=>{
-                                        // แปลงค่าให้เป็นตัวเลขโดยจัดการกับ data types ต่างๆ
+                                        // แปลงค่าให้เป็นตัวเลข
                                         let numericValue = 0;
                                         if (typeof reading.value === 'number') {
                                             numericValue = reading.value;
                                         } else if (reading.value !== undefined) {
-                                            // ลบอักขระที่ไม่ใช่ตัวเลข จุดทศนิยม และเครื่องหมายลบออก
                                             numericValue = parseFloat(String(reading.value).replace(/[^\d.-]/g, '')) || 0;
                                         }
-                                        // คำนวณสถานะคุณภาพอากาศสำหรับการ์ดแต่ละใบ
-                                        // การคำนวณนี้จะใช้ข้อมูล PM ทั้งหมดเพื่อให้ได้สถานะที่แม่นยำ
-                                        const pc01Value = getSafeValue(data.pmReadings, 'PC01');
-                                        const pm01Value = getSafeValue(data.pmReadings, 'PM0.1');
-                                        const pm25Value = reading.type === 'PM2.5' ? numericValue : getSafeValue(data.pmReadings, 'PM2.5');
-                                        const pm10Value = reading.type === 'PM10' ? numericValue : getSafeValue(data.pmReadings, 'PM10');
-                                        const status = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$data$2f$monitoring$2d$data$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["determineAirQuality"])(pc01Value, pm01Value, pm25Value, pm10Value);
-                                        const bgColor = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$data$2f$monitoring$2d$data$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getAirQualityColor"])(status);
+                                        // *** สำคัญ: ใช้สถานะและสีของแต่ละค่า PM แยกกัน ***
+                                        const { status: individualStatus, color: individualColor } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$data$2f$monitoring$2d$data$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getPMReadingStatusAndColor"])({
+                                            type: reading.type,
+                                            value: numericValue
+                                        });
+                                        console.log(`=== ${reading.type} INDIVIDUAL STATUS ===`);
+                                        console.log('Value:', numericValue);
+                                        console.log('Individual Status:', individualStatus);
+                                        console.log('Individual Color:', individualColor);
+                                        console.log('=====================================');
                                         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "rounded-lg p-1 sm:p-2 text-white text-center",
                                             style: {
-                                                backgroundColor: bgColor
+                                                backgroundColor: individualColor
                                             },
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2399,7 +2575,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     children: reading.type
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 480,
+                                                    lineNumber: 479,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2415,12 +2591,12 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                         showChangeIndicator: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 485,
+                                                        lineNumber: 484,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 484,
+                                                    lineNumber: 483,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2428,13 +2604,21 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     children: "μg/m³"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 494,
+                                                    lineNumber: 493,
+                                                    columnNumber: 23
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "text-xs opacity-75 mt-1 font-montserrat",
+                                                    children: individualStatus
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/components/MonitoringInterface.js",
+                                                    lineNumber: 498,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, `${reading.type}-${selectedLocation?.id || 'default'}-${index}`, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 475,
+                                            lineNumber: 474,
                                             columnNumber: 21
                                         }, this);
                                     }) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2442,7 +2626,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                         children: "ไม่พบข้อมูล PM2.5 และ PM10"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 500,
+                                        lineNumber: 504,
                                         columnNumber: 19
                                     }, this);
                                 })() : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2450,29 +2634,29 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                     children: "ไม่มีข้อมูลมลพิษในขณะนี้"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 506,
+                                    lineNumber: 510,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 436,
+                                lineNumber: 437,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 434,
+                        lineNumber: 435,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SimpleChevronBar, {}, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 514,
+                        lineNumber: 518,
                         columnNumber: 3
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 211,
+                lineNumber: 212,
                 columnNumber: 7
             }, this),
             showRecommendationPopup && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$dom$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createPortal"])(/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2506,7 +2690,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 549,
+                                    lineNumber: 553,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2516,13 +2700,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                     children: "×"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 555,
+                                    lineNumber: 559,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 548,
+                            lineNumber: 552,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2536,7 +2720,7 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 567,
+                                    lineNumber: 571,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2560,14 +2744,14 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             }
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 585,
+                                                            lineNumber: 589,
                                                             columnNumber: 27
                                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                             className: "text-lg sm:text-xl",
                                                             children: iconPath
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 595,
+                                                            lineNumber: 599,
                                                             columnNumber: 27
                                                         }, this),
                                                         isImageIcon && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2578,13 +2762,13 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                             children: "•"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 598,
+                                                            lineNumber: 602,
                                                             columnNumber: 27
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 583,
+                                                    lineNumber: 587,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2592,25 +2776,25 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                                     children: recommendation
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 603,
+                                                    lineNumber: 607,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, `popup-rec-${index}`, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 578,
+                                            lineNumber: 582,
                                             columnNumber: 21
                                         }, this);
                                     })
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 572,
+                                    lineNumber: 576,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 565,
+                            lineNumber: 569,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2621,30 +2805,30 @@ const MonitoringPanel = ({ selectedLocation, onLocationClear })=>{
                                 children: "ปิด"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 614,
+                                lineNumber: 618,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 613,
+                            lineNumber: 617,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/MonitoringInterface.js",
-                    lineNumber: 539,
+                    lineNumber: 543,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 528,
+                lineNumber: 532,
                 columnNumber: 9
             }, this), document.body // render ไปยัง document.body แทนที่จะอยู่ใน component tree
             )
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 210,
+        lineNumber: 211,
         columnNumber: 5
     }, this);
 };
@@ -2661,7 +2845,7 @@ const MapSection = ({ selectedLocation, onLocationSelect })=>{
                         children: "แผนที่ตำแหน่งตรวจวัด"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 634,
+                        lineNumber: 638,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2669,13 +2853,13 @@ const MapSection = ({ selectedLocation, onLocationSelect })=>{
                         children: "คลิกที่หมุดเพื่อดูข้อมูล"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 635,
+                        lineNumber: 639,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 633,
+                lineNumber: 637,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2684,18 +2868,18 @@ const MapSection = ({ selectedLocation, onLocationSelect })=>{
                     onLocationSelect: onLocationSelect
                 }, void 0, false, {
                     fileName: "[project]/src/components/MonitoringInterface.js",
-                    lineNumber: 643,
+                    lineNumber: 647,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 641,
+                lineNumber: 645,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 632,
+        lineNumber: 636,
         columnNumber: 5
     }, this);
 };
@@ -2718,7 +2902,7 @@ const MapComponentWrapper = ({ onLocationSelect })=>{
                         className: "animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto mb-2"
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 664,
+                        lineNumber: 668,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2726,18 +2910,18 @@ const MapComponentWrapper = ({ onLocationSelect })=>{
                         children: "กำลังโหลดแผนที่..."
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 665,
+                        lineNumber: 669,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 663,
+                lineNumber: 667,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/MonitoringInterface.js",
-            lineNumber: 662,
+            lineNumber: 666,
             columnNumber: 7
         }, this);
     }
@@ -2745,7 +2929,7 @@ const MapComponentWrapper = ({ onLocationSelect })=>{
         onLocationSelect: onLocationSelect
     }, void 0, false, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 671,
+        lineNumber: 675,
         columnNumber: 10
     }, this);
 };
@@ -2889,7 +3073,7 @@ const HistorySection = ({ selectedLocation })=>{
                                 children: "ข้อมูลย้อนหลัง"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 713,
+                                lineNumber: 717,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2902,7 +3086,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 716,
+                                                lineNumber: 720,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2913,13 +3097,13 @@ const HistorySection = ({ selectedLocation })=>{
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 717,
+                                                lineNumber: 721,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 715,
+                                        lineNumber: 719,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -2930,26 +3114,26 @@ const HistorySection = ({ selectedLocation })=>{
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 723,
+                                                lineNumber: 727,
                                                 columnNumber: 15
                                             }, this),
                                             "ดูทั้งหมด"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 719,
+                                        lineNumber: 723,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 714,
+                                lineNumber: 718,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 712,
+                        lineNumber: 716,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2961,7 +3145,7 @@ const HistorySection = ({ selectedLocation })=>{
                                     className: "w-4 h-4"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 732,
+                                    lineNumber: 736,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2972,18 +3156,18 @@ const HistorySection = ({ selectedLocation })=>{
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 733,
+                                    lineNumber: 737,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 731,
+                            lineNumber: 735,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 730,
+                        lineNumber: 734,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2997,7 +3181,7 @@ const HistorySection = ({ selectedLocation })=>{
                                         children: "แสดงข้อมูล:"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 742,
+                                        lineNumber: 746,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -3010,7 +3194,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "PC0.1"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 748,
+                                                lineNumber: 752,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -3018,7 +3202,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "PM0.1"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 749,
+                                                lineNumber: 753,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -3026,7 +3210,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "PM2.5"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 750,
+                                                lineNumber: 754,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -3034,19 +3218,19 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "PM10"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 751,
+                                                lineNumber: 755,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 743,
+                                        lineNumber: 747,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 741,
+                                lineNumber: 745,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3054,19 +3238,19 @@ const HistorySection = ({ selectedLocation })=>{
                                 children: "หน่วย: μg/m³"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 754,
+                                lineNumber: 758,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 740,
+                        lineNumber: 744,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 711,
+                lineNumber: 715,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3097,7 +3281,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     strokeDasharray: "2,2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 769,
+                                                    lineNumber: 773,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
@@ -3110,13 +3294,13 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: Math.round(getMaxValue() * value / 100)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 778,
+                                                    lineNumber: 782,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, index, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 768,
+                                            lineNumber: 772,
                                             columnNumber: 17
                                         }, this)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("polyline", {
@@ -3126,7 +3310,7 @@ const HistorySection = ({ selectedLocation })=>{
                                         points: chartData.map((d, i)=>`${i / (chartData.length - 1) * 100}%,${100 - d.value / getMaxValue() * 100}%`).join(' ')
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 792,
+                                        lineNumber: 796,
                                         columnNumber: 15
                                     }, this),
                                     chartData.map((d, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("g", {
@@ -3138,7 +3322,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     fill: "#3b82f6"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 804,
+                                                    lineNumber: 808,
                                                     columnNumber: 19
                                                 }, this),
                                                 i % Math.ceil(chartData.length / 8) === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
@@ -3152,29 +3336,29 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: d.time
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 812,
+                                                    lineNumber: 816,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, i, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 803,
+                                            lineNumber: 807,
                                             columnNumber: 17
                                         }, this))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 765,
+                                lineNumber: 769,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 764,
+                            lineNumber: 768,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 763,
+                        lineNumber: 767,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3193,7 +3377,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: "เวลา"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 836,
+                                                    lineNumber: 840,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -3201,7 +3385,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: "PM0.1"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 837,
+                                                    lineNumber: 841,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -3209,7 +3393,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: "PM2.5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 838,
+                                                    lineNumber: 842,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -3217,7 +3401,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: "PM10"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 839,
+                                                    lineNumber: 843,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -3225,7 +3409,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: "สถานะ"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 840,
+                                                    lineNumber: 844,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -3233,18 +3417,18 @@ const HistorySection = ({ selectedLocation })=>{
                                                     children: "แนวโน้ม"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                                    lineNumber: 841,
+                                                    lineNumber: 845,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                            lineNumber: 835,
+                                            lineNumber: 839,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 834,
+                                        lineNumber: 838,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -3266,13 +3450,13 @@ const HistorySection = ({ selectedLocation })=>{
                                                                 children: "ล่าสุด"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 856,
+                                                                lineNumber: 860,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 853,
+                                                        lineNumber: 857,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -3285,12 +3469,12 @@ const HistorySection = ({ selectedLocation })=>{
                                                             showChangeIndicator: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 862,
+                                                            lineNumber: 866,
                                                             columnNumber: 25
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 861,
+                                                        lineNumber: 865,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -3303,12 +3487,12 @@ const HistorySection = ({ selectedLocation })=>{
                                                             showChangeIndicator: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 871,
+                                                            lineNumber: 875,
                                                             columnNumber: 25
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 870,
+                                                        lineNumber: 874,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -3321,12 +3505,12 @@ const HistorySection = ({ selectedLocation })=>{
                                                             showChangeIndicator: false
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 880,
+                                                            lineNumber: 884,
                                                             columnNumber: 25
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 879,
+                                                        lineNumber: 883,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -3339,12 +3523,12 @@ const HistorySection = ({ selectedLocation })=>{
                                                             children: data.status === 'Unhealthy for Sensitive Groups' ? 'Unhealthy*' : data.status
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/MonitoringInterface.js",
-                                                            lineNumber: 889,
+                                                            lineNumber: 893,
                                                             columnNumber: 25
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 888,
+                                                        lineNumber: 892,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -3354,55 +3538,55 @@ const HistorySection = ({ selectedLocation })=>{
                                                                 className: "w-3 h-3 text-red-500 mx-auto"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 898,
+                                                                lineNumber: 902,
                                                                 columnNumber: 27
                                                             }, this),
                                                             trend === 'down' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trending$2d$up$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__TrendingUp$3e$__["TrendingUp"], {
                                                                 className: "w-3 h-3 text-green-500 mx-auto transform rotate-180"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 901,
+                                                                lineNumber: 905,
                                                                 columnNumber: 27
                                                             }, this),
                                                             trend === 'stable' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 className: "w-3 h-0.5 bg-gray-400 mx-auto"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                                lineNumber: 904,
+                                                                lineNumber: 908,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                                        lineNumber: 896,
+                                                        lineNumber: 900,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, `${data.time}-${index}`, true, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 852,
+                                                lineNumber: 856,
                                                 columnNumber: 21
                                             }, this);
                                         })
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 844,
+                                        lineNumber: 848,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 833,
+                                lineNumber: 837,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 832,
+                            lineNumber: 836,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 831,
+                        lineNumber: 835,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3416,7 +3600,7 @@ const HistorySection = ({ selectedLocation })=>{
                                         children: "ค่าเฉลี่ย"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 918,
+                                        lineNumber: 922,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3430,7 +3614,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 showChangeIndicator: false
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 920,
+                                                lineNumber: 924,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3438,19 +3622,19 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "μg/m³"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 927,
+                                                lineNumber: 931,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 919,
+                                        lineNumber: 923,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 917,
+                                lineNumber: 921,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3461,7 +3645,7 @@ const HistorySection = ({ selectedLocation })=>{
                                         children: "ต่ำสุด"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 932,
+                                        lineNumber: 936,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3475,7 +3659,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 showChangeIndicator: false
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 934,
+                                                lineNumber: 938,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3483,19 +3667,19 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "μg/m³"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 941,
+                                                lineNumber: 945,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 933,
+                                        lineNumber: 937,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 931,
+                                lineNumber: 935,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3506,7 +3690,7 @@ const HistorySection = ({ selectedLocation })=>{
                                         children: "สูงสุด"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 946,
+                                        lineNumber: 950,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3520,7 +3704,7 @@ const HistorySection = ({ selectedLocation })=>{
                                                 showChangeIndicator: false
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 948,
+                                                lineNumber: 952,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3528,25 +3712,25 @@ const HistorySection = ({ selectedLocation })=>{
                                                 children: "μg/m³"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                                lineNumber: 955,
+                                                lineNumber: 959,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/MonitoringInterface.js",
-                                        lineNumber: 947,
+                                        lineNumber: 951,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/MonitoringInterface.js",
-                                lineNumber: 945,
+                                lineNumber: 949,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 916,
+                        lineNumber: 920,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3559,31 +3743,31 @@ const HistorySection = ({ selectedLocation })=>{
                                     children: "การใช้งาน:"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 963,
+                                    lineNumber: 967,
                                     columnNumber: 16
                                 }, this),
                                 " เลื่อนตารางเพื่อดูข้อมูลย้อนหลัง หรือเลือก Parameter ที่ต้องการดูในกราฟและสถิติ"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 962,
+                            lineNumber: 966,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 961,
+                        lineNumber: 965,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 761,
+                lineNumber: 765,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 709,
+        lineNumber: 713,
         columnNumber: 5
     }, this);
 };
@@ -3627,7 +3811,7 @@ const SimpleChevronBar = ()=>{
                 children: "ระดับคุณภาพอากาศ"
             }, void 0, false, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 987,
+                lineNumber: 991,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3652,7 +3836,7 @@ const SimpleChevronBar = ()=>{
                                     strokeWidth: "1"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 996,
+                                    lineNumber: 1000,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("text", {
@@ -3669,24 +3853,24 @@ const SimpleChevronBar = ()=>{
                                     children: level.label
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/MonitoringInterface.js",
-                                    lineNumber: 1008,
+                                    lineNumber: 1012,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, level.label, true, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 995,
+                            lineNumber: 999,
                             columnNumber: 15
                         }, this);
                     })
                 }, void 0, false, {
                     fileName: "[project]/src/components/MonitoringInterface.js",
-                    lineNumber: 991,
+                    lineNumber: 995,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 990,
+                lineNumber: 994,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3700,18 +3884,18 @@ const SimpleChevronBar = ()=>{
                         children: level.thai
                     }, `simple-${level.label}`, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 1028,
+                        lineNumber: 1032,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 1026,
+                lineNumber: 1030,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 986,
+        lineNumber: 990,
         columnNumber: 5
     }, this);
 };
@@ -3724,7 +3908,7 @@ const Footer = ()=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$
                 children: "Created by Jaejae Dream Yok ❤️"
             }, void 0, false, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 1044,
+                lineNumber: 1048,
                 columnNumber: 5
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3740,12 +3924,12 @@ const Footer = ()=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$
                             height: 96
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 1047,
+                            lineNumber: 1051,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 1046,
+                        lineNumber: 1050,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3754,24 +3938,24 @@ const Footer = ()=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$
                             children: "Mupcop"
                         }, void 0, false, {
                             fileName: "[project]/src/components/MonitoringInterface.js",
-                            lineNumber: 1056,
+                            lineNumber: 1060,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/MonitoringInterface.js",
-                        lineNumber: 1055,
+                        lineNumber: 1059,
                         columnNumber: 7
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/MonitoringInterface.js",
-                lineNumber: 1045,
+                lineNumber: 1049,
                 columnNumber: 5
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/MonitoringInterface.js",
-        lineNumber: 1043,
+        lineNumber: 1047,
         columnNumber: 3
     }, this);
 ;

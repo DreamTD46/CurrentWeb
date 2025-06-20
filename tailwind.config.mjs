@@ -13,10 +13,8 @@ export default {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        montserrat: ['var(--font-montserrat)', 'Montserrat', 'sans-serif'],
-        sarabun: ['var(--font-sarabun)', 'Sarabun', 'sans-serif'],
-        numbers: ['var(--font-numbers)', 'Rubik', 'sans-serif'],
-        rubik: ['var(--font-numbers)', 'Rubik', 'sans-serif'], // alias
+        montserrat: ['Montserrat', 'sans-serif'],
+        sarabun: ['Sarabun', 'sans-serif'],
       },
     },
   },
